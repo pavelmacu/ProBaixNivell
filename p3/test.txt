@@ -1,0 +1,142 @@
+#include "CUnit/Basic.h"
+
+#include "itu.h"
+#include "codif.h"
+
+static morse_table_t taula;
+morse_table_t itu_table;
+
+static morse_char_t l1,l2,l3;
+static FILE* temp_file = NULL;
+
+
+/* The suite initialization function.
+ * Opens the temporary file used by the tests.
+ * Returns zero on success, non-zero otherwise.
+ */
+int init_modul_codif(void)
+{
+  empty_morse_table(taula);
+  return 0;
+}
+
+int init_modul_itu(void)
+{
+  itu_init();
+  return 0;
+}
+
+int init_modul_streamencode(void)
+{
+  if(NULL == (temp_file = fopen("temp.txt", "w+")))
+    return -1;
+  else 
+    return 0;
+
+}
+int out_modul_streamencode(void)
+{
+  if (0 != fclose(temp_file)) {
+      return -1;
+   }
+   else {
+      temp_file = NULL;
+      return 0;
+}
+  
+
+/* Simple test of fprintf().
+ * Writes test data to the temporary file and checks
+ * whether the expected number of bytes were written.
+ */
+void test_set_translation(void)
+{
+  set_translation(taula,'F', "-..");
+  set_translation(taula,'G', "-..");
+  set_translation(taula,'A', ".");
+}
+
+
+void test_to_ascii(void)
+{
+  CU_ASSERT_EQUAL('G', to_ascii(taula,"-.."));
+  CU_ASSERT_EQUAL('A', to_ascii(taula,"."));
+  CU_ASSERT_EQUAL('@', to_ascii(taula,".-"));
+}
+
+void test_to_morse(void)
+{
+  to_morse(taula,'G',l1);
+  to_morse(taula,'A',l2);
+  to_morse(taula,'M',l3);
+  CU_ASSERT_STRING_EQUAL(l1,"-..");
+  CU_ASSERT_STRING_EQUAL(l2,".");
+  CU_ASSERT_STRING_EQUAL(l3,"--");
+}
+
+void test_itu_init(void)
+{
+  CU_ASSERT_EQUAL('A', to_ascii(itu_table,".-"));
+  CU_ASSERT_EQUAL('B', to_ascii(itu_table,"-..."));
+  CU_ASSERT_EQUAL('Z', to_ascii(itu_table,"--.."));
+  CU_ASSERT_EQUAL('0', to_ascii(itu_table,"-----"));
+  CU_ASSERT_EQUAL('9', to_ascii(itu_table,"----."));  
+}
+
+/*
+void test_do_codifica(void){
+
+
+}
+
+void test_do_descodifica(void){
+*/
+
+}
+
+/* The main() function for setting up and running the tests.
+ * Returns a CUE_SUCCESS on successful running, another
+ * CUnit error code on failure.
+ */
+int main()
+{
+   CU_pSuite pSuite=NULL,pSuite2= NULL,pSuite3=NULL;
+
+   /* initialize the CUnit test registry */
+   if (CUE_SUCCESS != CU_initialize_registry())
+      return CU_get_error();
+
+   /* add a suite to the registry */
+   pSuite = CU_add_suite("Modul codif ", init_modul_codif, NULL);
+   if (NULL == pSuite) {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+   pSuite2 = CU_add_suite("Modul itu", init_modul_itu, NULL);
+   if (NULL == pSuite2) {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+
+   pSuite3 = CU_add_suite("Modul streamencode", init_modul_streamencode, out_modul_streamencode);
+   if (NULL == pSuite3) {
+      CU_cleanup_registry();
+      return CU_get_error();
+   }
+   /* add the tests to the suite */
+   CU_ADD_TEST(pSuite, test_set_translation);
+   CU_ADD_TEST(pSuite, test_to_ascii);
+   CU_ADD_TEST(pSuite, test_to_morse);
+
+   CU_ADD_TEST(pSuite2, test_itu_init);
+
+   //CU_ADD_TEST(pSuite3, test_do_codifica);
+   //CU_ADD_TEST(pSuite3, test_do_descodifica);
+
+   /* Run all tests using the CUnit Basic interface */
+   CU_basic_set_mode(CU_BRM_NORMAL);
+   CU_basic_run_tests();
+   CU_cleanup_registry();
+   return CU_get_error();
+}
+
